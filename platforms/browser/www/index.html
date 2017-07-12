@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>111</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        body{background: #000;text-align: center}
+        #div1 {
+            width: 200px;
+            height: 200px;
+            background: #ccc;
+        }
+        canvas{
+
+            background: url("./material/img/game_bg_2_hd.jpg");
+
+        }
+    </style>
+    <!--resource-->
+    <script>
+        var resource=[
+            'fish1','fish2','fish3','fish4','fish5',
+            'cannon1','cannon2','cannon3','cannon4','cannon5','cannon6','cannon7',
+            'bullet','bottom','web','coinText','number_black',
+            'coinAni1','coinAni2'
+        ];
+    </script>
+    <script>
+        function loadImage(arr,success,progress){
+            var count=0;
+            for(var i=0;i<arr.length;i++){
+                (function (index) {
+                    var oImg=new Image();
+                    oImg.onload= function () {
+                        JSON[arr[index]]=this;
+                        count++;
+                        if(count==arr.length){
+                            success && success();
+                        }
+                        progress && progress(count,arr.length)
+                    }
+                    oImg.src="./material/img/"+arr[index]+".png";
+
+                })(i)
+            }
+
+
+        }
+    </script>
+    <!--fish-->
+    <script>
+        var FISH_SIZE=[
+           null,
+            {w: 55, h: 37, collR: 17},
+            {w: 78, h: 64, collR: 24},
+            {w: 72, h: 56, collR: 20},
+            {w: 77, h: 59, collR: 22},
+            {w: 107, h: 122, collR: 29}
+        ];
+        class Fish{
+            constructor(type){
+                this.type=type;
+                this.x=0;
+                this.y=0;
+                this.rotate=0;
+                this.cur=0;
+                this.move();
+                this.iSpeed=1;
+                this.t1=null;
+                this.t2=null;
+
+            }
+
+            draw(gd){
+                var w=FISH_SIZE[this.type].w;
+                var h=FISH_SIZE[this.type].h;
+                this.collR=FISH_SIZE[this.type].collR;
+                gd.save();
+                gd.translate(this.x,this.y);
+                gd.rotate(d2a(this.rotate));
+                if(this.rotate>90 && this.rotate<270){
+                    gd.scale(1,-1)
+                }
+                gd.drawImage(JSON['fish'+this.type],
+                        0,this.cur*h,w,h,
+                        -w/2,-h/2,w,h
+                );
+                gd.restore()
+
+            }
+            move(){
+                var that=this;
+                this.t1=setInterval(function () {
+                    that.x+=Math.cos(d2a(that.rotate))*that.iSpeed
+                    that.y+=Math.sin(d2a(that.rotate))*that.iSpeed;
+                    console.log(1)
+                },30);
+                this.t2=setInterval(function () {
+                    that.cur++;
+                    if(that.cur==4) that.cur=0;
+                    console.log(2)
+                },300)
+            }
+            isIn(x,y){
+                var a=this.x-x;
+                var b=this.y-y;
+
+                var c=Math.sqrt(a*a+b*b);
+
+                if(c<this.collR){
+                    return true;
+                }else{
+                    return false;
+                }
+            }
+        }
+    </script>
+    <!--cannon-->
+    <script>
+        function rnd(n,m){
+            return parseInt(Math.random()*(m-n))+n;
+        }
+        function fillzero(n){
+            return n<10?'0'+n:''+n;
+        }
+        function d2a(n){
+            return n*Math.PI/180;
+        }
+        function a2d(n){
+            return n*180/Math.PI;
+        }
+        var CANNON_SIZE=[
+            null,
+            {w: 74, h: 74},
+            {w: 74, h: 76},
+            {w: 74, h: 76},
+            {w: 74, h: 83},
+            {w: 74, h: 85},
+            {w: 74, h: 90},
+            {w: 74, h: 94}
+        ]
+       class Cannon{
+           constructor(type){
+            this.type=type;
+            this.x=426;
+            this.y=570;
+            this.rotate=0;
+            this.cur=0;
+            this.timer=null;
+            this.emit()
+           }
+
+           draw(gd){
+                var w=CANNON_SIZE[this.type].w;
+                var h=CANNON_SIZE[this.type].h;
+                gd.save();
+                gd.translate(this.x,this.y);
+                gd.rotate(d2a(this.rotate));
+                gd.drawImage(JSON['cannon'+this.type],
+                        0,this.cur*h,w,h,
+                        -w/2,-h/2,w,h
+                );
+                gd.restore();
+            }
+            emit(){
+                //console.log(1)
+                var that=this;
+                clearInterval(that.timer)
+                this.timer=setInterval(function () {
+                    that.cur++;
+                    if(that.cur==5){
+                        that.cur=0;
+                        clearInterval(that.timer)
+                    }
+                },30)
+            }
+       }
+
+    </script>
+    <!--bullet-->
+    <script>
+        var BULLET_SIZE=[
+            null,
+            {x: 86, y: 0, w: 24, h: 26},
+            {x: 62, y: 0, w: 25, h: 29},
+            {x: 30, y: 0, w: 31, h: 35},
+            {x: 32, y: 35, w: 27, h: 31},
+            {x: 30, y: 82, w: 29, h: 33},
+            {x: 0, y: 82, w: 30, h: 34},
+            {x: 0, y: 0, w: 30, h: 44}
+        ];
+        class Bullet{
+            constructor(type){
+                this.type=type;
+                this.x=0;
+                this.y=0;
+                this.rotate=0;
+                this.speed=10;
+                this.move();
+            }
+
+            draw(gd){
+                var x=BULLET_SIZE[this.type].x;
+                var y=BULLET_SIZE[this.type].y;
+                var w=BULLET_SIZE[this.type].w;
+                var h=BULLET_SIZE[this.type].h;
+
+                gd.save()
+                gd.translate(this.x,this.y);
+                gd.rotate(d2a(this.rotate))
+                gd.drawImage(JSON["bullet"],x,y,w,h,-w/2,-h/2,w,h)
+                gd.restore()
+            }
+            move(){
+                setInterval(function () {
+                    this.x+=Math.sin(d2a(this.rotate))*this.speed;
+                    this.y-=Math.cos(d2a(this.rotate))*this.speed;
+                }.bind(this),30)
+            }
+        }
+
+    </script>
+    <!--coin-->
+    <script>
+        class Coin{
+            constructor(type){
+                this.x=0;
+                this.y=0;
+                this.type=type||1;
+                this.cur=0;
+                this.timer=null;
+                this.move();
+            }
+
+           draw(gd){
+                gd.save();
+                gd.translate(this.x,this.y);
+                switch (this.type){
+                    case 1:
+                    case 2:
+                        gd.drawImage(JSON['coinAni'+1],
+                                0,this.cur*60,60,60,
+                                -60/2,-60/2,60,60
+                        );
+                        break;
+                    case 3:
+                    case 4:
+                    case 5:
+                        gd.drawImage(JSON['coinAni'+2],
+                                0,this.cur*60,60,60,
+                                -60/2,-60/2,60,60
+                        );
+                        break;
+                }
+                gd.restore();
+            };
+            move(){
+                this.timer=setInterval(function(){
+                    this.cur++;
+                    if(this.cur==10){
+                        this.cur=0;
+                    }
+
+                    this.x += (0-this.x)/10;
+                    this.y += (600-this.y)/10;
+                    if(this.x<=20||this.y>=550){
+                        clearInterval(this.timer);
+                    }
+                }.bind(this),30);
+            }
+        }
+    </script>
+    <!--DeFish-->
+    <script>
+        var FISH_SIZE=[
+            null,
+            {w: 55, h: 37, collR: 17},
+            {w: 78, h: 64, collR: 24},
+            {w: 72, h: 56, collR: 20},
+            {w: 77, h: 59, collR: 22},
+            {w: 107, h: 122, collR: 29}
+        ];
+        class DeFish{
+            constructor(type){
+                this.type=type;
+                this.x=0;
+                this.y=0;
+                this.rotate=0;
+                this.cur=0;
+                this.move();
+                this.iSpeed=1;
+            }
+           draw(gd) {
+                var w=FISH_SIZE[this.type].w;
+                var h=FISH_SIZE[this.type].h;
+                gd.save();
+                gd.translate(this.x,this.y)
+                gd.rotate(d2a(this.rotate))
+                if(this.rotate>90 && this.rotate<270){
+                    gd.scale(1,-1)
+                }
+                gd.drawImage(JSON['fish'+this.type],
+                        0,(this.cur+4)*h,w,h,
+                        -w/2,-h/2,w,h
+                );
+                gd.restore()
+
+            }
+            move() {
+                var that=this;
+
+                setInterval(function () {
+                    that.cur++;
+                    if(that.cur==4) that.cur=0;
+                },300)
+            }
+        }
+
+    </script>
+    <!--web-->
+    <script>
+        class Web{
+            constructor(){
+                this.x=0;
+                this.y=0;
+                this.scale=0.5
+            }
+            draw(gd) {
+                gd.save();
+                gd.translate(this.x,this.y)
+                gd.scale(this.scale,this.scale)
+                gd.drawImage(JSON['web'],
+                        20,22,200,200,
+                        -100,-100,200,200
+                );
+                gd.restore();
+            }
+        }
+    </script>
+    <!--core-->
+    <script>
+        var CORE_SIZE=[
+            null,
+            {x:36,y:0,w:36,h:49},
+            {x:72,y:0,w:36,h:49},
+            {x:108,y:0,w:36,h:49},
+            {x:144,y:0,w:36,h:49},
+            {x:180,y:0,w:36,h:49}
+        ]
+        class Core{
+            constructor(type){
+                this.x=0;
+                this.y=0;
+                this.type=type||1;
+
+            }
+
+            draw(gd){
+                var w=CORE_SIZE[this.type].w;
+                var h=CORE_SIZE[this.type].h;
+                var x=CORE_SIZE[this.type].x;
+                var y=CORE_SIZE[this.type].y;
+                gd.save();
+                gd.translate(this.x,this.y);
+                gd.drawImage(JSON["coinText"],
+                     360,0,w,h,
+                     -w/2,-h/2,w,h
+                )
+                gd.restore();
+                gd.beginPath();
+                gd.save();
+                gd.translate(this.x+w,this.y);
+                gd.drawImage(JSON["coinText"],
+                        x,y,w,h,
+                        -w/2,-h/2,w,h
+                )
+                gd.restore();
+            };
+
+        }
+    </script>
+    <!--credit-->
+    <script>
+        class Credits{
+            constructor(num){
+                this.x=25;
+                this.y=585;
+                this.num=num;
+
+            }
+
+            draw(gd){
+                var w=20;
+                var h=24;
+                var nl=this.num.toString().length;
+                while(nl<6){
+                    this.num="0"+this.num;
+                    nl++;
+                }
+                var numArr=this.num.split("");
+                for(var i=0;i<6;i++){
+                    gd.beginPath();
+                    gd.save();
+                    gd.translate(this.x+24*i,this.y);
+                    gd.drawImage(JSON["number_black"],
+                            0,(9-numArr[i])*24,w,h,
+                            -w/2,-h/2,w,h
+                    )
+                    gd.restore();
+                }
+
+            };
+
+        }
+    </script>
+    <script>
+
+        function d2a(n){
+            return n*Math.PI/180;
+        }
+
+        var JSON={}
+        window.onload = function () {
+            var oC=document.getElementById('c1');
+            var gd = oC.getContext('2d');
+
+            loadImage(
+                    resource,
+                    function () {
+
+                        var c=new Cannon(7);
+                        var arrBullet=[];
+                        var arrFish=[];
+                        var arrCoin=[];
+                        var arrDeFish=[];
+                        var arrWeb=[];
+                        var arrCore=[];
+                        var numScore=0;
+                        setInterval(function () {
+
+
+                            gd.clearRect(0,0,oC.width,oC.height);
+                            //出鱼
+                            if(Math.random()<0.05){
+                                var f1=new Fish(rnd(1,6));
+                                if(Math.random()<0.5){
+                                    f1.x=-50;
+                                    f1.rotate=rnd(-45,45)
+                                }else{
+                                    f1.x=oC.width+50;
+                                    f1.rotate=rnd(135,225)
+                                }
+
+
+                                f1.y=rnd(100,oC.height-100);
+                                arrFish.push(f1);
+                            }
+
+                            for(var i=0;i<arrFish.length;i++){
+                                arrFish[i].draw(gd);
+                            }
+                            for(var i=0;i<arrCoin.length;i++){
+                                arrCoin[i].draw(gd);
+                            }
+                            for(var i=0;i<arrDeFish.length;i++){
+                                arrDeFish[i].draw(gd);
+                            }
+                            for(var i=0;i<arrCore.length;i++){
+                                arrCore[i].draw(gd);
+                            }
+
+                            for(var i=0;i<arrWeb.length;i++){
+                                arrWeb[i].draw(gd);
+                                arrWeb[i].scale+=0.1;
+                                if(arrWeb[i].scale>1.2){
+                                    arrWeb.splice(i--,1)
+                                }
+                            }
+                            //炮台
+                            gd.drawImage(JSON["bottom"],0,0,765,72,0,oC.height-70,765,72);
+                            for(var i=0;i<arrBullet.length;i++){
+                                arrBullet[i].draw(gd);
+
+                            }
+
+
+                            for(var i=0;i<arrFish.length;i++){
+                                for(var j=0;j<arrBullet.length;j++){
+                                    var bl=arrFish[i].isIn(arrBullet[j].x,arrBullet[j].y);
+                                    if(bl){
+                                        var type=arrFish[i].type;
+                                        var x=arrFish[i].x;
+                                        var y=arrFish[i].y;
+                                        var rotate=arrFish[i].rotate;
+                                        //打到了
+                                        arrFish.splice(i--,1); //鱼死
+                                        arrBullet.splice(j--,1);//炮弹挂
+                                        clearInterval(arrFish[i].t1);
+                                        clearInterval(arrFish[i].t2);
+                                        //金币
+                                        var coin=new Coin(type);
+                                        coin.x=x;
+                                        coin.y=y;
+                                        arrCoin.push(coin)
+                                        var defish=new DeFish(type);
+                                        defish.x=x;
+                                        defish.y=y;
+                                        arrDeFish.push(defish)
+                                       setTimeout(function () {
+                                           arrDeFish.shift()
+                                       },300)
+                                        if(type==1){
+                                            numScore+=1
+                                        }else if(type==2){
+                                            numScore+=2
+                                        }
+                                        else if(type==3){
+                                            numScore+=3
+                                        }
+                                        else if(type==4){
+                                            numScore+=4
+                                        }
+                                        else{
+                                            numScore+=5
+                                        }
+
+                                        //渔网
+                                        var web=new Web();
+                                        web.x=x;
+                                        web.y=y;
+                                        arrWeb.push(web)
+                                        //分数
+                                        var core=new Core(type);
+                                        core.x=x;
+                                        core.y=y;
+                                        arrCore.push(core);
+                                        setTimeout(function () {
+                                            arrCore.shift()
+                                        },500);
+
+                                       //arrCredits.push(credits);
+
+
+
+                                    }
+                                }
+                            }
+                            //分数板
+                            var credits=new Credits(numScore);
+                            credits.draw(gd)
+                            c.draw(gd)//炮筒
+
+                            //优化
+                            for(var i=0;i<arrBullet.length;i++){
+                                if(
+                                        arrBullet[i].x<-50||
+                                        arrBullet[i].x>oC.width+50||
+                                        arrBullet[i].y<-50||
+                                        arrBullet[i].y>oC.height+50
+                                )
+                                {
+                                    clearInterval(arrBullet[i].timer);
+                                    arrBullet.splice(i,1);//弹掉一个不用弹
+                                }
+                            }
+                            for(var i=0;i<arrFish.length;i++){
+                                if(arrFish[i].x<-50 ||arrFish[i].y<-50 ||arrFish[i].x>oC.width+50 ||arrFish[i].y>oC.height+50){
+                                    arrFish.splice(i,1);
+                                    i--
+                                }
+                            }
+                            for(var i=0;i<arrCoin.length;i++){
+                                if(arrCoin[i].x<20||arrCoin[i].y>550){
+                                    arrCoin.splice(i,1)
+                                }
+                            }
+
+
+
+                        },16)
+                        oC.onclick= function (ev) {
+                            var x=ev.offsetX- c.x;
+                            var y= c.y-ev.offsetY;
+                            var d=90-a2d(Math.atan2(y,x))
+                            c.rotate=d;
+                            c.emit();
+//                            //炮弹
+                            var bullet=new Bullet(c.type);
+                            bullet.x= c.x;
+                            bullet.y= c.y;
+                            bullet.rotate= c.rotate;
+                            arrBullet.push(bullet)
+                        }
+
+
+
+                    }
+            )
+
+
+
+
+
+
+        };
+    </script>
+</head>
+<body>
+
+<canvas id="c1" width="800" height="600"></canvas>
+
+</body>
+</html>
